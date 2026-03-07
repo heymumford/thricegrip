@@ -1,6 +1,6 @@
 [project]
 name = "thricegrip"
-version = "0.1.0"
+version = "0.2.0"
 description = "Three grips. One device. Total control. Pi-based KVM for AI agent computer-use."
 readme = "README.md"
 license = "MIT"
@@ -8,7 +8,7 @@ requires-python = ">=3.11"
 authors = [
     { name = "Eric Mumford", email = "eric@heymumford.com" },
 ]
-keywords = ["kvm", "raspberry-pi", "hid", "usb-gadget", "ai-agent", "computer-use"]
+keywords = ["kvm", "raspberry-pi", "hid", "usb-gadget", "ai-agent", "computer-use", "accessibility", "assistive-technology"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -25,6 +25,10 @@ dependencies = [
 agent = [
     "anthropic>=0.39",
     "pillow>=10.0",
+]
+accessibility = [
+    "anthropic>=0.39",
+    "vosk>=0.3.45",
 ]
 dev = [
     "pytest>=8.0",
