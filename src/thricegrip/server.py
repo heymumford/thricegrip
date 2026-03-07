@@ -22,7 +22,7 @@ from thricegrip import capture, hid, gadget
 
 STATIC_DIR = Path(__file__).parent.parent.parent / "static"
 
-app = FastAPI(title="ThricoGrip", version=__version__)
+app = FastAPI(title="ThriceGrip", version=__version__)
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -34,7 +34,7 @@ async def index():
     index_path = STATIC_DIR / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
-    return JSONResponse({"message": "ThricoGrip API", "version": __version__})
+    return JSONResponse({"message": "ThriceGrip API", "version": __version__})
 
 
 @app.get("/health")

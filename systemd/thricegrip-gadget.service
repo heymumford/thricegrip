@@ -1,5 +1,5 @@
 [Unit]
-Description=ThricoGrip USB HID Gadget Setup
+Description=ThriceGrip USB HID Gadget Setup
 After=sys-kernel-config.mount
 Requires=sys-kernel-config.mount
 

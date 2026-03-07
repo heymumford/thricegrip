@@ -1,6 +1,6 @@
 """Accessibility mode — voice-driven AI agent loop.
 
-Transforms ThricoGrip from a remote KVM into a hands-free computer
+Transforms ThriceGrip from a remote KVM into a hands-free computer
 assistant for blind users and users with physical disabilities.
 
 The loop:
@@ -98,7 +98,7 @@ def requires_confirmation(
 
 def build_system_prompt(config: AccessibilityConfig) -> str:
     """Build the system prompt for the accessibility agent."""
-    return """You are ThricoGrip, an accessibility assistant that helps users interact with \
+    return """You are ThriceGrip, an accessibility assistant that helps users interact with \
 their computer through voice commands. You can see the user's screen and control their \
 keyboard and mouse.
 

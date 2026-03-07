@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ThricoGrip installer for Raspberry Pi OS (Bookworm, 64-bit).
+# ThriceGrip installer for Raspberry Pi OS (Bookworm, 64-bit).
 #
 # Installs system dependencies, configures boot overlays for USB gadget
 # mode and HDMI-to-CSI capture, installs ustreamer for low-latency
@@ -46,7 +46,7 @@ info "Configuring boot overlays in $BOOT_CONFIG..."
 # Add dwc2 overlay (USB gadget mode) if not present
 if ! grep -q "^dtoverlay=dwc2" "$BOOT_CONFIG"; then
     echo "" >> "$BOOT_CONFIG"
-    echo "# ThricoGrip — USB gadget mode" >> "$BOOT_CONFIG"
+    echo "# ThriceGrip — USB gadget mode" >> "$BOOT_CONFIG"
     echo "dtoverlay=dwc2" >> "$BOOT_CONFIG"
     info "  Added dtoverlay=dwc2"
 else
@@ -55,7 +55,7 @@ fi
 
 # Add tc358743 overlay (HDMI-to-CSI capture) if not present
 if ! grep -q "^dtoverlay=tc358743" "$BOOT_CONFIG"; then
-    echo "# ThricoGrip — HDMI-to-CSI capture" >> "$BOOT_CONFIG"
+    echo "# ThriceGrip — HDMI-to-CSI capture" >> "$BOOT_CONFIG"
     echo "dtoverlay=tc358743" >> "$BOOT_CONFIG"
     info "  Added dtoverlay=tc358743"
 else

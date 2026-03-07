@@ -1,5 +1,5 @@
 [Unit]
-Description=ThricoGrip Video Stream (ustreamer)
+Description=ThriceGrip Video Stream (ustreamer)
 After=thricegrip-gadget.service
 Wants=thricegrip-gadget.service
 

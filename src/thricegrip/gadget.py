@@ -22,8 +22,8 @@ BCD_DEVICE = "0x0100"  # v1.0.0
 BCD_USB = "0x0200"     # USB 2.0
 
 SERIAL = "thricegrip-001"
-MANUFACTURER = "ThricoGrip"
-PRODUCT = "ThricoGrip KVM HID Device"
+MANUFACTURER = "ThriceGrip"
+PRODUCT = "ThriceGrip KVM HID Device"
 
 # Standard HID report descriptor for a boot-protocol keyboard (8 bytes).
 KEYBOARD_REPORT_DESC = (

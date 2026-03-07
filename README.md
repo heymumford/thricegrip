@@ -1,8 +1,8 @@
-# ThricoGrip
+# ThriceGrip
 
 **Three grips. One device. Total control.**
 
-ThricoGrip is an open-source hardware KVM device built on a Raspberry Pi that attaches to any target computer and grips all three interfaces — **keyboard**, **mouse**, and **video** — enabling remote human control or AI-agent-driven "computer use" at the hardware level.
+ThriceGrip is an open-source hardware KVM device built on a Raspberry Pi that attaches to any target computer and grips all three interfaces — **keyboard**, **mouse**, and **video** — enabling remote human control or AI-agent-driven "computer use" at the hardware level.
 
 ```
 TARGET LAPTOP
@@ -13,17 +13,17 @@ YOUR NETWORK
   |-- WiFi/Ethernet --> Pi --> Web UI / WebSocket API / Agent endpoint
 ```
 
-## Why ThricoGrip?
+## Why ThriceGrip?
 
-Existing KVM-over-IP devices (PiKVM, JetKVM, TinyPilot) are built for **human remote access**. ThricoGrip is built for **AI agent integration** — capture what the target displays, send it to an LLM with vision, and execute actions through hardware-level HID injection. Invisible to the target OS. Works at BIOS level. No software installation on the target.
+Existing KVM-over-IP devices (PiKVM, JetKVM, TinyPilot) are built for **human remote access**. ThriceGrip is built for **AI agent integration** — capture what the target displays, send it to an LLM with vision, and execute actions through hardware-level HID injection. Invisible to the target OS. Works at BIOS level. No software installation on the target.
 
 ## The Three Grips
 
 | Grip | Direction | How |
 |------|-----------|-----|
-| **Video** | Target --> ThricoGrip | HDMI capture via TC358743 CSI bridge (1080p30, ~100ms latency) |
-| **Keyboard** | ThricoGrip --> Target | USB HID gadget via `/dev/hidg0` (composite USB device) |
-| **Mouse** | ThricoGrip --> Target | USB HID gadget via `/dev/hidg1` (composite USB device) |
+| **Video** | Target --> ThriceGrip | HDMI capture via TC358743 CSI bridge (1080p30, ~100ms latency) |
+| **Keyboard** | ThriceGrip --> Target | USB HID gadget via `/dev/hidg0` (composite USB device) |
+| **Mouse** | ThriceGrip --> Target | USB HID gadget via `/dev/hidg1` (composite USB device) |
 
 ## Hardware BOM (~$75-110)
 
@@ -42,7 +42,7 @@ Existing KVM-over-IP devices (PiKVM, JetKVM, TinyPilot) are built for **human re
 
 Flash **Raspberry Pi OS Lite (64-bit, Bookworm)** to your SD card. Enable SSH and WiFi.
 
-### 2. Install ThricoGrip
+### 2. Install ThriceGrip
 
 ```bash
 ssh pi@thricegrip.local
@@ -87,7 +87,7 @@ src/thricegrip/
 
 ## Agent Integration
 
-ThricoGrip's killer feature: plug an LLM into the capture-action loop.
+ThriceGrip's killer feature: plug an LLM into the capture-action loop.
 
 ```python
 from thricegrip import capture, hid
@@ -123,7 +123,7 @@ while True:
 
 ## Comparison
 
-| Feature | ThricoGrip | PiKVM V2 | JetKVM | TinyPilot |
+| Feature | ThriceGrip | PiKVM V2 | JetKVM | TinyPilot |
 |---------|-----------|----------|--------|-----------|
 | Price | ~$75-110 | ~$100-150 | $69 | ~$400 |
 | AI agent ready | **Yes** | No | No | No |

@@ -1,5 +1,5 @@
 [Unit]
-Description=ThricoGrip API Server
+Description=ThriceGrip API Server
 After=thricegrip-gadget.service thricegrip-stream.service
 Wants=thricegrip-gadget.service thricegrip-stream.service
 

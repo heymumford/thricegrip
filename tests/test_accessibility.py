@@ -175,7 +175,7 @@ class TestBuildSystemPrompt:
     def test_prompt_contains_key_instructions(self):
         config = AccessibilityConfig()
         prompt = build_system_prompt(config)
-        assert "ThricoGrip" in prompt
+        assert "ThriceGrip" in prompt
         assert "narrate" in prompt.lower()
         assert "confirmation" in prompt.lower() or "confirm" in prompt.lower()
         assert "CAPTCHA" in prompt
