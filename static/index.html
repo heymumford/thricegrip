@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThricoGrip</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header h1 {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .status {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+        }
+        .status .grip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #555;
+        }
+        .status .dot.ok { background: #4caf50; }
+        .status .dot.err { background: #f44336; }
+        #video-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+            cursor: crosshair;
+        }
+        #video-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        #no-signal {
+            color: #555;
+            font-size: 18px;
+            position: absolute;
+        }
+        footer {
+            padding: 6px 16px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>THRICEGRIP</h1>
+        <div class="status">
+            <span class="grip"><span class="dot" id="dot-video"></span> VIDEO</span>
+            <span class="grip"><span class="dot" id="dot-keyboard"></span> KEYBOARD</span>
+            <span class="grip"><span class="dot" id="dot-mouse"></span> MOUSE</span>
+        </div>
+    </header>
+
+    <div id="video-container" tabindex="0">
+        <img id="video" src="/stream" alt="Target display" style="display:none;">
+        <div id="no-signal">NO SIGNAL</div>
+    </div>
+
+    <footer>
+        <span>Click video to capture keyboard/mouse</span>
+        <span id="latency">--</span>
+    </footer>
+
+    <script>
+        const video = document.getElementById('video');
+        const noSignal = document.getElementById('no-signal');
+        const container = document.getElementById('video-container');
+
+        // Video stream
+        video.onload = () => {
+            video.style.display = 'block';
+            noSignal.style.display = 'none';
+        };
+        video.onerror = () => {
+            video.style.display = 'none';
+            noSignal.style.display = 'block';
+        };
+
+        // Try ustreamer on port 8080
+        video.src = `http://${location.hostname}:8080/stream`;
+
+        // Health check
+        async function checkHealth() {
+            try {
+                const res = await fetch('/health');
+                const data = await res.json();
+                document.getElementById('dot-video').className =
+                    'dot ' + (data.grips.video.available ? 'ok' : 'err');
+                document.getElementById('dot-keyboard').className =
+                    'dot ' + (data.grips.keyboard.available ? 'ok' : 'err');
+                document.getElementById('dot-mouse').className =
+                    'dot ' + (data.grips.mouse.available ? 'ok' : 'err');
+            } catch (e) {
+                // API not reachable
+            }
+        }
+        checkHealth();
+        setInterval(checkHealth, 5000);
+
+        // WebSocket HID
+        let ws = null;
+        let captured = false;
+
+        function connectWs() {
+            ws = new WebSocket(`ws://${location.host}/ws/hid`);
+            ws.onclose = () => setTimeout(connectWs, 2000);
+        }
+        connectWs();
+
+        function send(msg) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(msg));
+            }
+        }
+
+        container.addEventListener('click', (e) => {
+            if (!captured) {
+                captured = true;
+                container.style.cursor = 'none';
+                container.requestPointerLock();
+                return;
+            }
+            send({ type: 'click', button: e.button === 2 ? 'right' : 'left' });
+        });
+
+        container.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        document.addEventListener('pointerlockchange', () => {
+            captured = !!document.pointerLockElement;
+            if (!captured) container.style.cursor = 'crosshair';
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!captured) return;
+            send({ type: 'mouse_move', dx: e.movementX, dy: e.movementY });
+        });
+
+        container.addEventListener('wheel', (e) => {
+            if (!captured) return;
+            send({ type: 'scroll', amount: e.deltaY > 0 ? -3 : 3 });
+        });
+
+        // HID keycode mapping (subset — extend as needed)
+        const KEY_MAP = {
+            'Escape': 'esc', 'Enter': 'enter', 'Backspace': 'backspace',
+            'Tab': 'tab', 'Delete': 'delete', 'Insert': 'insert',
+            'Home': 'home', 'End': 'end', 'PageUp': 'pageup', 'PageDown': 'pagedown',
+            'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right',
+            'F1': 'f1', 'F2': 'f2', 'F3': 'f3', 'F4': 'f4', 'F5': 'f5', 'F6': 'f6',
+            'F7': 'f7', 'F8': 'f8', 'F9': 'f9', 'F10': 'f10', 'F11': 'f11', 'F12': 'f12',
+            ' ': 'space',
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (!captured) return;
+            e.preventDefault();
+
+            const mods = [];
+            if (e.ctrlKey) mods.push('ctrl');
+            if (e.shiftKey) mods.push('shift');
+            if (e.altKey) mods.push('alt');
+            if (e.metaKey) mods.push('super');
+
+            const key = KEY_MAP[e.key] || (e.key.length === 1 ? e.key.toLowerCase() : null);
+            if (key) {
+                send({ type: 'key', key, modifiers: mods });
+            }
+        });
+
+        // Escape releases pointer lock (built into browser)
+    </script>
+</body>
+</html>

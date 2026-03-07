@@ -1,0 +1,16 @@
+[Unit]
+Description=ThricoGrip API Server
+After=thricegrip-gadget.service thricegrip-stream.service
+Wants=thricegrip-gadget.service thricegrip-stream.service
+
+[Service]
+Type=simple
+ExecStart=/opt/thricegrip/venv/bin/uvicorn \
+    thricegrip.server:app \
+    --host 0.0.0.0 \
+    --port 8081
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

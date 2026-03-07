@@ -1,0 +1,13 @@
+[Unit]
+Description=ThricoGrip USB HID Gadget Setup
+After=sys-kernel-config.mount
+Requires=sys-kernel-config.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/thricegrip/venv/bin/python -c "from thricegrip.gadget import setup; setup()"
+ExecStop=/opt/thricegrip/venv/bin/python -c "from thricegrip.gadget import teardown; teardown()"
+
+[Install]
+WantedBy=multi-user.target
