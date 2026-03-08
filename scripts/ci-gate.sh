@@ -77,7 +77,9 @@ run_test() {
 
 run_security() {
   local req_file="/tmp/ci-gate-${RANDOM:-$$}.txt"
+  local audit_log="/tmp/pip-audit-${RANDOM:-$$}.log"
   local security_status=0
+  local has_findings=0
 
   run_sync
   uv export --no-hashes --no-emit-project > "$req_file"
@@ -85,20 +87,59 @@ run_security() {
     echo "::warning::pip-audit installation unavailable; attempting audit with existing toolchain"
   fi
 
-  if [[ "$SECURITY_FAIL_ON_FINDINGS" == "1" ]]; then
-    uv run pip-audit -r "$req_file" --no-deps
+  run_pip_audit() {
+    local req_path="$1"
+    local log_path="$2"
+    local status=0
+    local module_status=0
+
+    set +e
+    uv run pip-audit -r "$req_path" --no-deps >"$log_path" 2>&1
+    status=$?
+    if [[ "$status" -ne 0 ]]; then
+      echo "::warning::Primary pip-audit invocation failed with status $status; retrying via module path."
+      uv run python -m pip_audit -r "$req_path" --no-deps >>"$log_path" 2>&1
+      module_status=$?
+      status=$module_status
+    fi
+    set -e
+
+    return "$status"
+  }
+
+  if ! run_pip_audit "$req_file" "$audit_log"; then
     security_status=$?
-  else
-    uv run pip-audit -r "$req_file" --no-deps || security_status=$?
-    if [[ "$security_status" -ne 0 ]]; then
-      echo "::warning::pip-audit found advisories; review before promotion"
-      security_status=0
+  fi
+
+  if [[ "$security_status" -eq 1 ]] && grep -Eqi "vulnerability|vulnerabilities|cve-[0-9]{4}-[0-9]{4,}" "$audit_log"; then
+    has_findings=1
+  fi
+
+  if [[ "$security_status" -ne 0 ]]; then
+    if [[ "$security_status" -eq 1 ]]; then
+      if [[ "$has_findings" == "1" ]]; then
+        echo "::warning::pip-audit found advisories; review before promotion"
+      else
+        echo "::error::pip-audit returned exit 1 without advisory output; see $audit_log"
+      fi
+    else
+      echo "::error::pip-audit execution failed (exit $security_status); see $audit_log"
     fi
   fi
-  rm -f "$req_file"
+
+  if [[ "$security_status" -eq 1 && "$has_findings" -eq 0 ]]; then
+    security_status=2
+  fi
+
+  rm -f "$req_file" "$audit_log"
+
   if [[ "${SECURITY_FAIL_ON_FINDINGS}" == "1" ]]; then
+    if [[ "$security_status" -eq 1 ]] && [[ "$has_findings" -eq 0 ]]; then
+      return 2
+    fi
     return "$security_status"
   fi
+  return 0
 }
 
 require_uv
