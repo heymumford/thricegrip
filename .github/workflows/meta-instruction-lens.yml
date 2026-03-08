@@ -1,0 +1,25 @@
+name: Meta-Instruction Lens
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+concurrency:
+  group: meta-lens-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-meta-instruction-lens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify Meta-Architectural instruction lens
+        run: bash scripts/verify-meta-invariants.sh

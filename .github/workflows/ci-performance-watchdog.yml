@@ -1,0 +1,109 @@
+name: CI Performance Watchdog
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  scan-release-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Scan slow deploy/push/release steps
+        env:
+          CI_WATCHDOG_MAX_SECONDS: "300"
+          CI_WATCHDOG_RUNS_TO_SAMPLE: "40"
+          CI_WATCHDOG_STEP_PATTERN: "(deploy|release|push|publish|artifact|sync|rollback|flyctl|git push|restore|migration)"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const maxSeconds = Number(process.env.CI_WATCHDOG_MAX_SECONDS || 300);
+            const runsToSample = Number(process.env.CI_WATCHDOG_RUNS_TO_SAMPLE || 40);
+            const stepPattern = new RegExp(process.env.CI_WATCHDOG_STEP_PATTERN || '(deploy|release|push|publish)', 'i');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const runsResp = await github.request('GET /repos/{owner}/{repo}/actions/runs', {
+              owner,
+              repo,
+              per_page: Math.min(100, runsToSample),
+            });
+
+            const completedRuns = (runsResp.data.workflow_runs || [])
+              .filter((run) => run.status === 'completed' && run.conclusion && run.conclusion !== 'cancelled' && run.conclusion !== 'skipped')
+              .slice(0, runsToSample);
+
+            const violations = [];
+
+            for (const run of completedRuns) {
+              const jobsResp = await github.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs', {
+                owner,
+                repo,
+                run_id: run.id,
+                per_page: 100,
+              });
+              const jobs = jobsResp.data.jobs || [];
+
+              for (const job of jobs) {
+                for (const step of (job.steps || [])) {
+                  if (!step.started_at || !step.completed_at || !step.name) {
+                    continue;
+                  }
+                  if (!stepPattern.test(step.name)) {
+                    continue;
+                  }
+                  const stepSeconds = (Date.parse(step.completed_at) - Date.parse(step.started_at)) / 1000;
+                  if (!Number.isFinite(stepSeconds) || stepSeconds <= maxSeconds) {
+                    continue;
+                  }
+                  violations.push({
+                    runNumber: run.run_number,
+                    workflowName: run.name || 'unknown-workflow',
+                    stepName: step.name,
+                    stepSeconds: Math.round(stepSeconds),
+                    maxSeconds,
+                    runUrl: run.html_url,
+                    event: run.event,
+                    headBranch: run.head_branch || run.head_sha || 'unknown',
+                    runStartedAt: run.run_started_at || run.created_at,
+                  });
+                }
+              }
+            }
+
+            violations.sort((a, b) => b.stepSeconds - a.stepSeconds);
+
+            const summary = core.summary;
+            await summary.addHeading('CI Performance Watchdog');
+            await summary.addRaw(`Scanned ${completedRuns.length} completed workflow runs in ${owner}/${repo}.`);
+            await summary.addRaw(`Budget threshold: ${maxSeconds}s for release/push/rebuild-related step names.`);
+
+            if (violations.length === 0) {
+              await summary.addRaw('No violations found.');
+              await summary.write();
+              return;
+            }
+
+            await summary.addRaw('');
+            await summary.addRaw('## Violating steps');
+            const lines = [
+              '| Run | Workflow | Step | Duration | Branch | Event | Run URL |',
+              '|---|---|---|---:|---|---|---|',
+            ];
+            for (const violation of violations) {
+              lines.push(
+                `| ${violation.runNumber} | ${violation.workflowName} | ${violation.stepName} | ${violation.stepSeconds}s | ${violation.headBranch} | ${violation.event} | [open](${violation.runUrl}) |`
+              );
+            }
+
+            await summary.addRaw(lines.join('\n'));
+            await summary.addRaw('');
+            await summary.addRaw('Action: refactor any persistent step above budget, split into smaller stages (build/test/publish shards), or cache expensive inputs.');
+            await summary.write();
+
+            core.setFailed(`CI performance watchdog found ${violations.length} release/push step${violations.length === 1 ? '' : 's'} over ${maxSeconds}s.`);
