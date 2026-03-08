@@ -32,3 +32,12 @@ When the user types `bootstrap`, execute this sequence before any code work:
 2. Test before commit: `uv run pytest -q --cache-clear` where applicable.
 3. Never merge or ship on red CI.
 4. Keep commits narrowly scoped to the task.
+
+## Operational Communications Protocol and Execution Rules
+- All outbound comms for other agents must be operational: include concrete action, location, and expected decision/next step.
+- Avoid high-volume non-actionable status messages.
+- For autonomous background work, emit only state transitions and blockers, with explicit handoff points.
+- Use repository-first coordination; prefer `ssh`/git/log checks over repeated "still working" pings.
+- Do not invoke `python` directly. Use `uv` for package execution (`uv run`, `uv pip`, etc.).
+- Run work through `fetch -> rebase -> status -> test -> push` and only add local commits when tests and policy checks pass.
+
