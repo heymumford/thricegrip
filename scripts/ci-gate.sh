@@ -77,15 +77,23 @@ run_test() {
 
 run_security() {
   local req_file="/tmp/ci-gate-${RANDOM:-$$}.txt"
+  local security_status=0
 
   run_sync
   uv export --no-hashes --no-emit-project > "$req_file"
+  if ! uv run python -m pip install --disable-pip-version-check --no-input pip-audit >/tmp/pip-audit-install.log 2>&1; then
+    echo "::warning::pip-audit installation unavailable; attempting audit with existing toolchain"
+  fi
 
   if [[ "$SECURITY_FAIL_ON_FINDINGS" == "1" ]]; then
-    uvx pip-audit -r "$req_file" --no-deps
-    local security_status=$?
+    uv run pip-audit -r "$req_file" --no-deps
+    security_status=$?
   else
-    uvx pip-audit -r "$req_file" --no-deps || echo "::warning::pip-audit found advisories; review before promotion"
+    uv run pip-audit -r "$req_file" --no-deps || security_status=$?
+    if [[ "$security_status" -ne 0 ]]; then
+      echo "::warning::pip-audit found advisories; review before promotion"
+      security_status=0
+    fi
   fi
   rm -f "$req_file"
   if [[ "${SECURITY_FAIL_ON_FINDINGS}" == "1" ]]; then
