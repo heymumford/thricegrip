@@ -59,3 +59,5 @@ Application rule for this repo:
 
 
 Canonical policy: [invariant-policy.md](./invariant-policy.md)
+
+\n## Operational Comms Standard\n\nOperational messages must be intentionally actionable. Do not send non-operational status noise or periodic chatter.\n\n- Use `REQUEST` only for explicit action requests, decisions, approvals, or escalations.\n- Use `STATUS` only for state transitions (started/finished/blocked/handed off), not idle progress.\n- Every outbound message should include:\n  - `topic`: stable routing/decision area (for example `repo_sync_gate`, `handoff`, `blocker`, `task_status`)\n  - `state`: `pass | running | blocked | done`\n  - `delta`: what changed since the last message\n  - `impact`: why this matters to downstream agents\n  - `next_action`: owner + explicit next step + verification criteria\n  - `risks`: blockers or open assumptions (if any)\n  - `ask`: a concrete question, only when a response is required\n- Keep messages concise; one objective per message.\n\nIf no actionable content exists, do not message.\n
