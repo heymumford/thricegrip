@@ -41,3 +41,13 @@ When the user types `bootstrap`, execute this sequence before any code work:
 - Do not invoke `python` directly. Use `uv` for package execution (`uv run`, `uv pip`, etc.).
 - Run work through `fetch -> rebase -> status -> test -> push` and only add local commits when tests and policy checks pass.
 
+
+## Operational Messaging Heuristic (Agent Metal Protocol)
+- For every state change, emit one machine-parseable heartbeat with: `repo`, `branch`, `commit`, `status`, `next`, and evidence pointer (commit/test log path).
+- Do not send standalone status noise. Send only:
+  - `STATE|repo=<repo>|branch=<branch>|commit=<sha>|status=<ok|fail|skip>|next=<next_step>|proof=<artifact>`
+  - `BLOCK|repo=<repo>|issue=<brief>|required_input=<who/what>|deadline=<utc_iso>`
+- Standard reply contract for other agents: `ACK` when handoff accepted, `Q` with one clarifying question, or `DONE` with completion artifact IDs.
+- Discovery message to other agents: `I am operating in <repo> on <branch>; check AGENTS.md/CLAUDE.md for the heartbeat protocol and current state via git status + branch log.`
+- When in autonomous background mode, emit heartbeats only on transitions and blocker resolution (no polling spam).
+
