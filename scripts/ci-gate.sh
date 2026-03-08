@@ -81,7 +81,7 @@ run_security() {
 
   run_sync
   uv export --no-hashes --no-emit-project > "$req_file"
-  if ! uv run python -m pip install --disable-pip-version-check --no-input pip-audit >/tmp/pip-audit-install.log 2>&1; then
+  if ! uv pip install --no-deps pip-audit >/tmp/pip-audit-install.log 2>&1; then
     echo "::warning::pip-audit installation unavailable; attempting audit with existing toolchain"
   fi
 
